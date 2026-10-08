@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Mediator</title>
+<style>
+body {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    margin: 0;
+    background: #f2f2f2;
+    direction: rtl;
+}
+.container {
+    width: 80%;
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px #aaa;
+}
+h1 { text-align: center; }
+textarea {
+    width: 100%;
+    height: 110px;
+    box-sizing: border-box;
+    padding: 12px;
+    font-size: 18px;
+    direction: rtl;
+    text-align: right;
+    resize: vertical;
+}
+button {
+    margin-top: 10px;
+    padding: 10px 25px;
+    font-size: 17px;
+    cursor: pointer;
+}
+button:disabled { cursor: wait; opacity: .65; }
+.panel {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f7f7f7;
+    border-radius: 8px;
+}
+.panel h2 { margin-top: 0; font-size: 20px; }
+.response {
+    white-space: pre-wrap;
+    direction: rtl;
+    text-align: right;
+    line-height: 1.6;
+    min-height: 40px;
+}
+#status { margin-top: 12px; color: #555; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>AI MEDIATOR</h1>
+
+<textarea id="question" placeholder="اكتب سؤالك هنا..."></textarea>
+<br>
+<button id="sendBtn" onclick="sendQuestion()">إرسال</button>
+<div id="status"></div>
+
+<div class="panel">
+    <h2>DeepSeek</h2>
+    <div id="deepseek" class="response">ستظهر إجابة DeepSeek هنا...</div>
+</div>
+
+<div class="panel">
+    <h2>ChatGPT</h2>
+    <div id="chatgpt" class="response">ستظهر مراجعة ChatGPT هنا...</div>
+</div>
+</div>
+
+<script>
+async function sendQuestion() {
+    const question = document.getElementById('question').value.trim();
+    const button = document.getElementById('sendBtn');
+    const status = document.getElementById('status');
+    const deepseek = document.getElementById('deepseek');
+    const chatgpt = document.getElementById('chatgpt');
+
+    if (!question) return;
+
+    button.disabled = true;
+    status.textContent = 'جارٍ إرسال السؤال إلى DeepSeek ثم ChatGPT...';
+    deepseek.textContent = 'جارٍ الانتظار...';
+    chatgpt.textContent = 'جارٍ الانتظار...';
+
+    try {
+        const response = await fetch('/api/mediate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'حدث خطأ غير معروف.');
+
+        deepseek.textContent = data.deepseek;
+        chatgpt.textContent = data.chatgpt;
+        status.textContent = 'تمت المعالجة بنجاح.';
+    } catch (error) {
+        status.textContent = 'خطأ: ' + error.message;
+        deepseek.textContent = 'تعذر الحصول على الإجابة.';
+        chatgpt.textContent = 'تعذر الحصول على المراجعة.';
+    } finally {
+        button.disabled = false;
+    }
+}
+</script>
+</body>
+</html>
